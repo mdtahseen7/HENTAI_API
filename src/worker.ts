@@ -60,7 +60,22 @@ app.get("/api/oppai/search/:query", async (c) => {
 
 app.get("/api/oppai/watch/:id", async (c) => {
   const id = idSchema.parse(c.req.param("id"));
-  return await handleRequest(c, OppaiStream, "getStream", id);
+  try {
+    const provider = new OppaiStream();
+    const result = await provider.getStream(id);
+    
+    const streamsWithHeaders = result.streams.map((s: any) => ({
+      ...s,
+      headers: {
+        "Referer": "https://oppai.stream/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      }
+    }));
+
+    return c.json({ ...result, streams: streamsWithHeaders });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Fetch failed' }, 500);
+  }
 });
 
 // HentaiHaven routes
