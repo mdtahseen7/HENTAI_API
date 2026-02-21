@@ -151,7 +151,8 @@ export class OppaiStream {
                 title: title || slug,
                 description,
                 streams: streams.sort((a, b) => b.height - a.height),
-                subtitles
+                subtitles,
+                referer: this.BASE_URL
             };
         } catch (e) {
             throw new Error("Failed to parse video source JSON");

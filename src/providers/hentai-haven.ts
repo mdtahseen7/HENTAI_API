@@ -68,7 +68,7 @@ export type SearchResult = {
  * Class representing the HentaiHaven provider.
  */
 export class HentaiHaven {
-  private baseUrl: string = "http://hentaihaven.xxx";
+  private baseUrl: string = "https://hentaihaven.xxx";
 
   /**
    * Create an instance of HentaiHaven.

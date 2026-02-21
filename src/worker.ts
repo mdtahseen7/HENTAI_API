@@ -28,9 +28,11 @@ async function handleRequest(
   try {
     const provider = new ProviderClass();
     const result = await provider[method](...args);
-    return c.json(result);
+    // Convert to plain JSON (handles luxon DateTime objects)
+    return c.json(JSON.parse(JSON.stringify(result)));
   } catch (error: any) {
-    return c.json({ error: error.message || 'Internal server error' }, 500);
+    console.error('Request error:', error);
+    return c.json({ error: error.message || 'Internal server error', stack: error.stack }, 500);
   }
 }
 
@@ -58,7 +60,7 @@ app.get("/api/oppai/search/:query", async (c) => {
 
 app.get("/api/oppai/watch/:id", async (c) => {
   const id = idSchema.parse(c.req.param("id"));
-  return await handleRequest(c, OppaiStream, "watch", id);
+  return await handleRequest(c, OppaiStream, "getStream", id);
 });
 
 // HentaiHaven routes
