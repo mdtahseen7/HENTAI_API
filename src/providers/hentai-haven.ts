@@ -64,16 +64,9 @@ export type SearchResult = {
   author: string;
 };
 
-/**
- * Class representing the HentaiHaven provider.
- */
 export class HentaiHaven {
   private baseUrl: string = "https://hentaihaven.xxx";
 
-  /**
-   * Create an instance of HentaiHaven.
-   * @param {string} [baseURL] - Optional base URL for the HentaiHaven provider.
-   */
   constructor(baseURL?: string, cors?: string) {
     if (baseURL) {
       if (baseURL.startsWith("http") || baseURL.startsWith("https")) {
@@ -92,11 +85,6 @@ export class HentaiHaven {
     }
   }
 
-  /**
-   * Fetch search results based on a query string.
-   * @param {string} query - The search query.
-   * @returns {Promise<SearchResult[]>} The search results.
-   */
   public async fetchSearchResult(query: string): Promise<SearchResult[]> {
     if (!query) query = "Hatsukoi Jikan";
 
@@ -165,13 +153,6 @@ export class HentaiHaven {
     return results;
   }
 
-  /**
-   * Fetch detailed information about a specific hentai by ID.
-   * @param {string} id - The hentai ID.
-   * @param {EpisodesSort} [episodesSort="ASC"] - Sorting order of episodes.
-   * @returns {Promise<HentaiInfo>} The hentai information.
-   * @throws Will throw an error if the ID is not provided or if data fetching fails.
-   */
   public async fetchInfo(
     id: string,
     episodesSort: EpisodesSort = "ASC"
@@ -251,11 +232,6 @@ export class HentaiHaven {
     } as HentaiInfo;
   }
 
-  /**
-   * Fetch available video sources for a specific hentai by ID.
-   * @param {string} [id] - The hentai ID, base64 encoded.
-   * @returns {Promise<HentaiSources>} The available video sources and thumbnail.
-   */
   public async fetchSources(id?: string): Promise<HentaiSources> {
     if (id?.includes("episode-"))
       throw new Error("The Episode ID must be encoded.");
@@ -335,12 +311,6 @@ export class HentaiHaven {
     } as HentaiSources;
   }
 
-  /**
-   * Sorts episodes based on the given sort order.
-   * @param {HentaiEpisode[]} episodes - The list of episodes to sort.
-   * @param {EpisodesSort} sortOrder - The sort order, either "ASC" or "DESC".
-   * @private
-   */
   private sortEpisodes(episodes: HentaiEpisode[], sortOrder: EpisodesSort) {
     episodes.sort((a, b) => {
       if (sortOrder === "ASC") {

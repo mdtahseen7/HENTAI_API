@@ -104,7 +104,6 @@ export class HentaiTV {
       }
     });
 
-    // Pagination
     let totalPages = 1;
     const hasPagination = $('.flex[data-nav]').length > 0;
     

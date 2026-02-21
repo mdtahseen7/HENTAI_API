@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import type { SearchResult } from "../types/hanime"; // Reuse or create new type
+import type { SearchResult } from "../types/hanime";
 
 interface OppaiVideoSource {
     url: string;
@@ -53,20 +53,15 @@ export class OppaiStream {
             const title = $el.attr('name') || '';
             const episode = $el.attr('ep') || '1';
             
-            // Extract slug from link
             const href = $el.find('a').attr('href');
             let slug = '';
             if (href) {
-                // e.g. https://oppai.stream/watch?e=slug&...
                 try {
                     const urlObj = new URL(href, this.BASE_URL);
                     slug = urlObj.searchParams.get('e') || '';
-                } catch (e) {
-                    console.error("Invalid URL in search result:", href);
-                }
+                } catch (e) {}
             }
             
-            // Fallback slug if link parsing fails (though unlikely)
             if (!slug) {
                 slug = $el.attr('idgt') + '-' + episode; 
             }
@@ -81,7 +76,7 @@ export class OppaiStream {
                 cover_url: coverUrl,
                 views: 0,
                 rating: 0,
-                is_censored: false // Mostly uncensored site
+                is_censored: false
             });
         });
 
@@ -102,7 +97,6 @@ export class OppaiStream {
         
         const html = await response.text();
         
-        // Extract sources from JS variable
         const match = html.match(/var\s+availableres\s*=\s*({[^}]+})/);
         
         if (!match) {
@@ -130,7 +124,6 @@ export class OppaiStream {
                 }
             }
             
-            // Parse metadata
             const $ = cheerio.load(html);
             const title = $('h1.title-vid').text().trim();
             const description = $('.desc-vid').text().trim();

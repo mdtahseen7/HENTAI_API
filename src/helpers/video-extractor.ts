@@ -30,7 +30,6 @@ function extractPhpPlayer(html: string): { video: string | null; srt: string | n
 
 function decodeVideoUrl(url: string): string | null {
   try {
-    // Try to extract base64 from various URL patterns
     const vidMatch = url.match(/vid=([^&]+)/);
     const uMatch = url.match(/u=([^&]+)/);
     const encoded = vidMatch?.[1] || uMatch?.[1];
@@ -51,7 +50,6 @@ export async function extractHentaiTVSources(url: string): Promise<ExtractedSour
   const sources: VideoSource[] = [];
   
   try {
-    // First try to decode video URL from the iframe src directly
     const directUrl = decodeVideoUrl(url);
     if (directUrl) {
       const format = directUrl.includes('.m3u8') ? 'hls' : 'mp4';
@@ -89,7 +87,6 @@ export async function extractHentaiTVSources(url: string): Promise<ExtractedSour
       return { sources };
     }
 
-    // Try to decode from player URL
     const decodedFromPlayer = decodeVideoUrl(playerUrl);
     if (decodedFromPlayer && !sources.find(s => s.src === decodedFromPlayer)) {
       const format = decodedFromPlayer.includes('.m3u8') ? 'hls' : 'mp4';
@@ -116,7 +113,6 @@ export async function extractHentaiTVSources(url: string): Promise<ExtractedSour
         sources.push({ src: extracted.srt, format: 'srt' });
       }
 
-      // Add iframe as fallback
       if (!sources.find(s => s.src === playerFullUrl)) {
         sources.push({ src: playerFullUrl, format: 'iframe' });
       }

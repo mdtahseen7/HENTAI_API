@@ -1,4 +1,3 @@
-// Cloudflare Workers entry point - no database dependencies
 import { Hono } from "hono";
 import { HentaiHaven } from "./providers/hentai-haven";
 import { prettyJSON } from "hono/pretty-json";
@@ -18,7 +17,6 @@ app.use(logger());
 
 const idSchema = z.string().min(1).max(200);
 
-// Generic request handler without caching (no Redis on Workers)
 async function handleRequest(
   c: any,
   ProviderClass: new () => any,
@@ -28,15 +26,12 @@ async function handleRequest(
   try {
     const provider = new ProviderClass();
     const result = await provider[method](...args);
-    // Convert to plain JSON (handles luxon DateTime objects)
     return c.json(JSON.parse(JSON.stringify(result)));
   } catch (error: any) {
-    console.error('Request error:', error);
-    return c.json({ error: error.message || 'Internal server error', stack: error.stack }, 500);
+    return c.json({ error: error.message || 'Internal server error' }, 500);
   }
 }
 
-// Root documentation
 app.get("/", (c) => {
   return c.json({
     name: "Hentai API",
@@ -52,7 +47,6 @@ app.get("/", (c) => {
   });
 });
 
-// Oppai routes
 app.get("/api/oppai/search/:query", async (c) => {
   const query = idSchema.parse(c.req.param("query"));
   return await handleRequest(c, OppaiStream, "search", query);
@@ -78,7 +72,6 @@ app.get("/api/oppai/watch/:id", async (c) => {
   }
 });
 
-// HentaiHaven routes
 app.get("/api/hh/search/:query", async (c) => {
   const query = idSchema.parse(c.req.param("query"));
   return await handleRequest(c, HentaiHaven, "fetchSearchResult", query);
@@ -94,7 +87,6 @@ app.get("/api/hh/watch/:id", async (c) => {
   return await handleRequest(c, HentaiHaven, "fetchSource", id);
 });
 
-// Hanime routes
 app.get("/api/hanime/search/:query", async (c) => {
   const query = idSchema.parse(c.req.param("query"));
   return await handleRequest(c, Hanime, "search", query);
@@ -105,7 +97,6 @@ app.get("/api/hanime/streams/:slug", async (c) => {
   return await handleRequest(c, Hanime, "getVideoBySlug", slug);
 });
 
-// HentaiTV routes
 app.get("/api/hentaitv/search/:query", async (c) => {
   const query = idSchema.parse(c.req.param("query"));
   return await handleRequest(c, HentaiTV, "search", query);
@@ -131,7 +122,6 @@ app.get("/api/hentaitv/top", async (c) => {
   return await handleRequest(c, HentaiTV, "getTop", page);
 });
 
-// HentaiCity routes
 app.get("/api/hentaicity/recent", async (c) => {
   const page = parseInt(c.req.query("page") || "1", 10);
   return await handleRequest(c, HentaiCity, "getRecent", page);

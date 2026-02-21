@@ -122,7 +122,6 @@ export class HentaiCity {
       }
     });
 
-    // Pagination
     let lastPage = page;
     let nextPage: number | null = null;
     const paginationLinks: number[] = [];
@@ -187,7 +186,6 @@ export class HentaiCity {
       }
     });
 
-    // Pagination
     let lastPage = page;
     let nextPage: number | null = null;
     const paginationLinks: number[] = [];
@@ -253,7 +251,6 @@ export class HentaiCity {
       }
     });
 
-    // Pagination
     let lastPage = page;
     let nextPage: number | null = null;
     const paginationLinks: number[] = [];
@@ -307,9 +304,7 @@ export class HentaiCity {
         uploadDate = jsonLd.uploadDate || '';
         author = jsonLd.author || '';
       }
-    } catch (e) {
-      // JSON parsing failed
-    }
+    } catch (e) {}
 
     let altTitle = '';
     let description = '';
@@ -376,9 +371,7 @@ export class HentaiCity {
         const jsonLd = JSON.parse(jsonLdText);
         thumbnail = jsonLd.thumbnailUrl?.length ? jsonLd.thumbnailUrl[0] : '';
       }
-    } catch (e) {
-      // JSON parsing failed
-    }
+    } catch (e) {}
 
     const m3u8Url = $('video source').attr('src') || '';
     const vttThumbnail = `https://www.hentaicity.com/stp/vtt.php?v=${vidid}`;

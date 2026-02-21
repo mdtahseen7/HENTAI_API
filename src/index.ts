@@ -15,26 +15,20 @@ import { HentaiCity } from "./providers/hentaicity";
 import { HentaiTVSearchResultsSchema, HentaiTVInfoSchema, HentaiTVWatchSchema, HentaiTVPaginatedSchema } from "./schema/hentaitv";
 import { HentaiCitySearchResultsSchema, HentaiCityInfoSchema, HentaiCityWatchSchema, HentaiCityPaginatedSchema } from "./schema/hentaicity";
 
-// Types for optional dependencies
 type RedisType = any;
 type MongoDbType = any;
 type CollectionType = any;
 
-// Redis and MongoDB are optional - API works without them on edge runtimes
 let redis: RedisType | null = null;
 let mongoClient: MongoDbType | undefined;
 let db: MongoDbType | undefined;
 let apiKeyCollection: CollectionType | undefined;
 
-// Initialize databases only in Node.js/Bun environments (not Cloudflare Workers)
 const initDatabases = async () => {
-  // Skip on Cloudflare Workers
   if (typeof (globalThis as any).WebSocketPair !== 'undefined' && typeof process === 'undefined') {
-    console.log('Running on Cloudflare Workers - skipping database initialization');
     return;
   }
   
-  // Try to initialize Redis
   if (process.env.REDIS_HOST && process.env.REDIS_PASSWORD) {
     try {
       const { default: Redis } = await import('ioredis');
@@ -47,15 +41,11 @@ const initDatabases = async () => {
         connectTimeout: 5000,
       });
       redis.on('error', (err: Error) => {
-        console.warn('Redis error:', err.message);
         redis = null;
       });
-    } catch (e) {
-      console.warn('Redis not available');
-    }
+    } catch (e) {}
   }
   
-  // Try to initialize MongoDB
   if (process.env.MONGODB_URL) {
     try {
       const { MongoClient } = await import('mongodb');
@@ -63,14 +53,11 @@ const initDatabases = async () => {
       await mongoClient.connect();
       db = mongoClient.db();
       apiKeyCollection = db.collection('apiKeys');
-    } catch (e) {
-      console.warn('MongoDB not available');
-    }
+    } catch (e) {}
   }
 };
 
-// Initialize on startup (non-blocking)
-initDatabases().catch(console.warn);
+initDatabases().catch(() => {});
 
 const app = new Hono();
 
@@ -753,20 +740,17 @@ app.get("/", (c) => {
 });
 
 const rateLimit = async (c: Context, key: string, limit: number, ttl: number): Promise<Response | void> => {
-  if (!redis) return; // Skip rate limiting if Redis not available
+  if (!redis) return;
   try {
     const count = await redis.incr(key);
     if (count > limit) {
       return c.json({ error: "Rate limit exceeded" }, 429);
     }
     await redis.expire(key, ttl);
-  } catch (e) {
-    // Redis error, skip rate limiting
-  }
+  } catch (e) {}
 };
 
 const cache = async <T extends object>(c: Context, key: string, fetcher: () => Promise<T>): Promise<Response> => {
-  // If no Redis, just fetch directly
   if (!redis) {
     const data = await fetcher();
     return c.json(data);
@@ -798,7 +782,6 @@ const cache = async <T extends object>(c: Context, key: string, fetcher: () => P
     await redis.set(key, JSON.stringify(data), 'EX', 3600);
     return c.json(data);
   } catch (e) {
-    // Redis error, fetch directly
     const data = await fetcher();
     return c.json(data);
   }
@@ -824,7 +807,6 @@ const handleRequest = async <T>(c: Context, provider: any, method: string, schem
       const conninfo = getConnInfo(c);
       clientId = `${conninfo?.remote?.address || "unknown"}-${conninfo?.remote?.port || "0"}`;
     } catch {
-      // Fallback if getConnInfo fails
       clientId = c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || "unknown";
     }
     const limit = apiKeyResult ? 1500 : 15;
@@ -840,7 +822,6 @@ const handleRequest = async <T>(c: Context, provider: any, method: string, schem
       return schema.parse(result);
     });
   } catch (error: any) {
-    console.error("Error handling request:", error);
     if (error instanceof z.ZodError) {
       return c.json({ error: error.issues }, 422);
     }
@@ -887,7 +868,6 @@ app.get("/api/oppai/watch/:id", async (c) => {
         
         const streamsWithHeaders = result.streams.map(s => ({
             ...s,
-            // Explicitly provide the headers needed for the user's external proxy
             headers: {
                 "Referer": "https://oppai.stream/",
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -975,7 +955,6 @@ app.get("/embed/hanime/:id", async (c) => {
 </html>`, 409);
 });
 
-// HentaiTV Routes
 app.get("/api/hentaitv/recent", async (c) => {
     return await handleRequest(c, HentaiTV, "getRecent", HentaiTVSearchResultsSchema);
 });
@@ -1016,7 +995,6 @@ app.get("/api/hentaitv/watch/:id", async (c) => {
     return await handleRequest(c, HentaiTV, "getWatch", HentaiTVWatchSchema, id);
 });
 
-// HentaiCity Routes
 app.get("/api/hentaicity/recent", async (c) => {
     return await handleRequest(c, HentaiCity, "getRecent", HentaiCitySearchResultsSchema);
 });
@@ -1031,8 +1009,6 @@ app.get("/api/hentaicity/top", async (c) => {
     return await handleRequest(c, HentaiCity, "getTop", HentaiCityPaginatedSchema, page);
 });
 
-// Note: HentaiCity search requires JavaScript rendering, not available
-
 app.get("/api/hentaicity/info/:id", async (c) => {
     const id = idSchema.parse(c.req.param("id"));
     return await handleRequest(c, HentaiCity, "getInfo", HentaiCityInfoSchema, id);
@@ -1046,15 +1022,3 @@ app.get("/api/hentaicity/watch/:id", async (c) => {
 const port = process.env.PORT || 3000;
 
 export default app;
-
-/* 
-// For local development or non-serverless environments
-if (import.meta.main) {
-  const { serve } = await import('bun');
-  serve({
-    fetch: app.fetch,
-    port: port,
-  });
-  console.log(`Server is running on port ${port}`);
-} 
-*/
