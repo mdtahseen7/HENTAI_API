@@ -14,9 +14,10 @@ COPY . .
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=7860
 
-# Expose port
+# Expose port (7860 for HuggingFace Spaces, 3000 for others)
+EXPOSE 7860
 EXPOSE 3000
 
 # Start the server
