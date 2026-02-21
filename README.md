@@ -74,6 +74,22 @@ To run the application in production mode:
 bun run src/index.ts
 ```
 
+## Deployment
+
+### Cloudflare Workers
+
+```bash
+bun run deploy:cf
+```
+
+Live: https://hentai-api.mdtahseen7378.workers.dev
+
+### HuggingFace Spaces
+
+Push to your HuggingFace Space repository. The Dockerfile is pre-configured for port 7860.
+
+Live: https://mdtahseen7-hentai-api.hf.space
+
 ## API Documentation
 
 When the server is running, navigate to `http://localhost:3000/` to view the interactive documentation. The interface allows you to explore endpoints, view response schemas, and test API calls directly.
