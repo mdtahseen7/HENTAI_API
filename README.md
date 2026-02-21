@@ -1,3 +1,13 @@
+---
+title: Hentai API
+emoji: 🎬
+colorFrom: purple
+colorTo: pink
+sdk: docker
+pinned: false
+app_port: 7860
+---
+
 # Hentai API
 
 A centralized API service for aggregating and streaming adult anime content from multiple sources. Built with Bun and Hono.
