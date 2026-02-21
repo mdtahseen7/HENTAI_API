@@ -1017,9 +1017,16 @@ app.get("/api/hentaicity/watch/:id", async (c) => {
 
 const port = process.env.PORT || 3000;
 
-export default {
-  fetch: app.fetch,
-  port: port,
-};
+export default app;
 
-connectToDb();
+/* 
+// For local development or non-serverless environments
+if (import.meta.main) {
+  const { serve } = await import('bun');
+  serve({
+    fetch: app.fetch,
+    port: port,
+  });
+  console.log(`Server is running on port ${port}`);
+} 
+*/
