@@ -4,11 +4,14 @@
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/luxon": "^3.4.2"
+    "@types/luxon": "^3.4.2",
+    "wrangler": "^3.0.0"
   },
   "scripts": {
     "start": "bun run src/index.ts",
-    "dev": "bun run src/index.ts --watch"
+    "dev": "bun run src/index.ts --watch",
+    "deploy:cf": "wrangler deploy",
+    "dev:cf": "wrangler dev"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
