@@ -3,10 +3,7 @@ import { HentaiHaven } from "./providers/hentai-haven";
 import { prettyJSON } from "hono/pretty-json";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
-import Redis from "ioredis";
-import { MongoClient, Db, Collection } from "mongodb";
 import type { Context } from "hono";
-import { getConnInfo } from "hono/bun";
 import { z } from 'zod';
 import Hanime from "./providers/hanime";
 import { OppaiStream } from "./providers/oppai";
@@ -17,39 +14,62 @@ import { HentaiCity } from "./providers/hentaicity";
 import { HentaiTVSearchResultsSchema, HentaiTVInfoSchema, HentaiTVWatchSchema, HentaiTVPaginatedSchema } from "./schema/hentaitv";
 import { HentaiCitySearchResultsSchema, HentaiCityInfoSchema, HentaiCityWatchSchema, HentaiCityPaginatedSchema } from "./schema/hentaicity";
 
-// Redis is optional - API will work without caching if not configured
-let redis: Redis | null = null;
-if (process.env.REDIS_HOST && process.env.REDIS_PASSWORD) {
-  try {
-    // Remove https:// prefix if present (Upstash format)
-    const host = process.env.REDIS_HOST.replace(/^https?:\/\//, '');
-    redis = new Redis({
-      host,
-      password: process.env.REDIS_PASSWORD,
-      tls: host.includes('upstash') ? {} : undefined,
-      lazyConnect: true,
-      connectTimeout: 5000,
-    });
-    redis.on('error', (err) => {
-      console.warn('Redis error:', err.message);
-      redis = null;
-    });
-  } catch (e) {
-    console.warn('Redis connection failed, running without cache');
+// Types for optional dependencies
+type RedisType = any;
+type MongoDbType = any;
+type CollectionType = any;
+
+// Redis and MongoDB are optional - API works without them on edge runtimes
+let redis: RedisType | null = null;
+let mongoClient: MongoDbType | undefined;
+let db: MongoDbType | undefined;
+let apiKeyCollection: CollectionType | undefined;
+
+// Initialize databases only in Node.js/Bun environments (not Cloudflare Workers)
+const initDatabases = async () => {
+  // Skip on Cloudflare Workers
+  if (typeof (globalThis as any).WebSocketPair !== 'undefined' && typeof process === 'undefined') {
+    console.log('Running on Cloudflare Workers - skipping database initialization');
+    return;
   }
-}
-
-const mongoClient = process.env.MONGODB_URL ? new MongoClient(process.env.MONGODB_URL) : undefined;
-let db: Db | undefined;
-let apiKeyCollection: Collection | undefined;
-
-const connectToDb = async () => {
-  if(mongoClient) {
-    await mongoClient.connect();
-    db = mongoClient.db();
-    apiKeyCollection = db.collection("apiKeys");
+  
+  // Try to initialize Redis
+  if (process.env.REDIS_HOST && process.env.REDIS_PASSWORD) {
+    try {
+      const { default: Redis } = await import('ioredis');
+      const host = process.env.REDIS_HOST.replace(/^https?:\/\//, '');
+      redis = new Redis({
+        host,
+        password: process.env.REDIS_PASSWORD,
+        tls: host.includes('upstash') ? {} : undefined,
+        lazyConnect: true,
+        connectTimeout: 5000,
+      });
+      redis.on('error', (err: Error) => {
+        console.warn('Redis error:', err.message);
+        redis = null;
+      });
+    } catch (e) {
+      console.warn('Redis not available');
+    }
+  }
+  
+  // Try to initialize MongoDB
+  if (process.env.MONGODB_URL) {
+    try {
+      const { MongoClient } = await import('mongodb');
+      mongoClient = new MongoClient(process.env.MONGODB_URL);
+      await mongoClient.connect();
+      db = mongoClient.db();
+      apiKeyCollection = db.collection('apiKeys');
+    } catch (e) {
+      console.warn('MongoDB not available');
+    }
   }
 };
+
+// Initialize on startup (non-blocking)
+initDatabases().catch(console.warn);
 
 const app = new Hono();
 
