@@ -839,12 +839,12 @@ const handleRequest = async <T>(c: Context, provider: any, method: string, schem
       const result = await instance[method](...args);
       return schema.parse(result);
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error handling request:", error);
     if (error instanceof z.ZodError) {
       return c.json({ error: error.issues }, 422);
     }
-    return c.json({ error: "Internal server error" }, 500);
+    return c.json({ error: error?.message || "Internal server error" }, 500);
   }
 };
 

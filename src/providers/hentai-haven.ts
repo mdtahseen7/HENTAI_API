@@ -263,18 +263,32 @@ export class HentaiHaven {
     const pageUrl = `${this.baseUrl}/watch/${atob(id!)}`;
 
     const pageResponse = await fetch(pageUrl);
+    if (!pageResponse.ok) {
+      throw new Error(`Failed to fetch page: ${pageResponse.status} ${pageResponse.statusText}`);
+    }
     const pageHtml = await pageResponse.text();
 
     const $page = load(pageHtml);
     const iframeSrc = $page(".player_logic_item > iframe").attr("src");
+    
+    if (!iframeSrc) {
+      throw new Error("Could not find video iframe - page may be unavailable or blocked");
+    }
 
-    const iframeResponse = await fetch(iframeSrc!);
+    const iframeResponse = await fetch(iframeSrc);
+    if (!iframeResponse.ok) {
+      throw new Error(`Failed to fetch iframe: ${iframeResponse.status} ${iframeResponse.statusText}`);
+    }
     const iframeHtml = await iframeResponse.text();
 
     const $iframe = load(iframeHtml);
     const secureToken = $iframe('meta[name="x-secure-token"]')
       .attr("content")
       ?.replace("sha512-", "");
+    
+    if (!secureToken) {
+      throw new Error("Could not find secure token - site may have changed or blocked request");
+    }
 
 
     const rotatedSha = CryptoHelper.rot13Cipher(secureToken!);
