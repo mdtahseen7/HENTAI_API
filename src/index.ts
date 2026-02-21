@@ -3,6 +3,7 @@ import { HentaiHaven } from "./providers/hentai-haven";
 import { prettyJSON } from "hono/pretty-json";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { getConnInfo } from "hono/bun";
 import type { Context } from "hono";
 import { z } from 'zod';
 import Hanime from "./providers/hanime";
@@ -818,10 +819,17 @@ const apiKeyAuth = async (c: Context): Promise<Response | void> => {
 const handleRequest = async <T>(c: Context, provider: any, method: string, schema: z.ZodSchema<any>, ...args: any[]): Promise<Response> => {
   try {
     const apiKeyResult = await apiKeyAuth(c);
-    const conninfo = await getConnInfo(c);
+    let clientId = "unknown";
+    try {
+      const conninfo = getConnInfo(c);
+      clientId = `${conninfo?.remote?.address || "unknown"}-${conninfo?.remote?.port || "0"}`;
+    } catch {
+      // Fallback if getConnInfo fails
+      clientId = c.req.header("x-forwarded-for") || c.req.header("cf-connecting-ip") || "unknown";
+    }
     const limit = apiKeyResult ? 1500 : 15;
     const ttl = 60;
-    const rateLimitKey = `${provider.name}-${method}-${conninfo.remote.address}-${conninfo.remote.port}`;
+    const rateLimitKey = `${provider.name}-${method}-${clientId}`;
     const rateLimited = await rateLimit(c, rateLimitKey, limit, ttl);
     if (rateLimited) return rateLimited;
 
